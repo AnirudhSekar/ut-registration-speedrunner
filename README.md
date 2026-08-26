@@ -17,11 +17,11 @@ A Chrome extension that helps UT students register faster by organizing Unique N
 ## Preview
 
 <p align="center">
-  <img src="docs/screenshots/practice-overlay.png" alt="UT Registration SpeedRunner overlay on the built-in practice registration page" width="72%">
+  <img src="docs/screenshots/auto-demo.gif" alt="UT Registration SpeedRunner auto mode demo on the built-in practice registration page" width="72%">
 </p>
 
 <p align="center">
-  <sub><em>Screenshot of the extension in action: the floating overlay appears on the right side of the built-in practice registration page.</em></sub>
+  <sub><em>Demo of the extension in action: auto mode and the floating overlay running on the built-in practice registration page.</em></sub>
 </p>
 
 ## Hotkeys
