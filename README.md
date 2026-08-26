@@ -21,7 +21,7 @@ A Chrome extension that helps UT students register faster by organizing Unique N
 </p>
 
 <p align="center">
-  <sub><em>Demo of the extension in action: auto mode and the floating overlay running on the built-in practice registration page.</em></sub>
+  <sub><em>Realtime demo of the extension in action: auto mode and the floating overlay running on the built-in practice registration page.</em></sub>
 </p>
 
 ## Hotkeys
