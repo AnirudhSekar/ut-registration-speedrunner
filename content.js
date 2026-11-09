@@ -16,6 +16,7 @@ let overlayGeometryLoaded = false;
 let resizeSaveTimer = null;
 let lastFocusedEditable = null;
 let fullAutoRun = null;
+let stopRestoringUniqueFocus = null;
 const storage = (() => {
   const chromeStorage = globalThis.chrome?.storage?.local;
   if (chromeStorage) {
@@ -163,6 +164,7 @@ function loadState() {
       updateOverlayCompactClasses(createHud());
       overlayGeometryLoaded = true;
     }
+    restoreUniqueInputFocus();
   });
 }
 
@@ -538,6 +540,49 @@ function deepActiveElement(root = document) {
   return active;
 }
 
+// A real registration submission may reload the document or replace its form.
+// Retry briefly while that happens, without taking focus away from the user.
+function restoreUniqueInputFocus() {
+  stopRestoringUniqueFocus?.();
+  if (!state?.enabled || state.autoMode === "off") return;
+
+  const startedAt = Date.now();
+  let timer = null;
+  const stop = () => {
+    clearInterval(timer);
+    window.removeEventListener("pointerdown", onUserInteraction, true);
+    window.removeEventListener("keydown", onUserInteraction, true);
+    if (stopRestoringUniqueFocus === stop) stopRestoringUniqueFocus = null;
+  };
+  const onUserInteraction = (event) => {
+    if (event.isTrusted) stop();
+  };
+  const tryFocus = () => {
+    if (!state?.enabled || state.autoMode === "off" || Date.now() - startedAt >= 15000) {
+      stop();
+      return;
+    }
+
+    // Use explicit Add/Register fields only; never focus a search, drop or swap box.
+    const field = [...document.querySelectorAll('input#s_unique_add, input[name="s_unique_add"], input#uniqueNumber')]
+      .find((element) => canWriteToInput(element) && isVisibleElement(element));
+    const active = deepActiveElement();
+    const activeIsAddField = active?.matches?.('input#s_unique_add, input[name="s_unique_add"], input#uniqueNumber');
+    if (isEditable(active) && active !== field && active.isConnected && !activeIsAddField) {
+      stop();
+      return;
+    }
+    if (!field || document.readyState === "loading") return;
+    if (active !== field) field.focus({ preventScroll: true });
+    if (deepActiveElement() === field) lastFocusedEditable = field;
+  };
+
+  stopRestoringUniqueFocus = stop;
+  window.addEventListener("pointerdown", onUserInteraction, true);
+  window.addEventListener("keydown", onUserInteraction, true);
+  timer = setInterval(tryFocus, 100);
+}
+
 function setNativeValue(element, value) {
   const ownDescriptor = Object.getOwnPropertyDescriptor(element, "value");
   const prototype = Object.getPrototypeOf(element);
@@ -631,6 +676,7 @@ function autoSubmitForm(referenceElement, expectedValue = "") {
     }
 
     referenceElement?.focus?.({ preventScroll: true });
+    restoreUniqueInputFocus();
     if (form?.requestSubmit) {
       try {
         form.requestSubmit(button || undefined);
